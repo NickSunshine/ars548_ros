@@ -28,13 +28,14 @@ using namespace std::chrono_literals;
  * @brief Data obtained from the RadarSensors_Annex_AES548_IO SW 05.48.04.pdf 
  */
 #define DEFAULT_RADAR_IP "224.0.2.2"
-#define DEFAULT_RADAR_CFG_DST_IP "10.13.1.113"
-#define DEFAULT_RADAR_CFG_SRC_IP "10.13.1.166"
 #define RADAR_INTERFACE "10.13.1.166"
 #define DEFAULT_RADAR_PORT 42102
-#define DEFAULT_RADAR_CFG_DST_PORT 42101
-#define DEFAULT_RADAR_CFG_SRC_PORT 42401
 #define DEFAULT_FRAME_ID "ARS_548" 
+#define DEFAULT_RADAR_CFG_SRC_IP "10.13.1.166"
+#define DEFAULT_RADAR_CFG_SRC_PORT 42401
+#define DEFAULT_RADAR_CFG_DST_IP "10.13.1.113"
+#define DEFAULT_RADAR_CFG_DST_PORT 42101
+
 #define MSGBUFSIZE 102400
 #define MAX_OBJECTS 50
 #define MAX_DETECTIONS 800
@@ -47,6 +48,7 @@ using namespace std::chrono_literals;
 #define STATUS_MESSAGE_PAYLOAD 84
 #define OBJECT_MESSAGE_PAYLOAD 9401
 #define DETECTION_MESSAGE_PAYLOAD 35336
+
 /**
 
  * @brief POINTCLOUD_HEIGHT = 1 because the pointcloud is unordered.
@@ -657,12 +659,13 @@ class ARS548Driver{
 
     public:
     std::string ars548_IP;
-    std::string ars548_CFG_Src_IP;
-    std::string ars548_CFG_Dst_IP;
-    std::string frame_ID;
     int ars548_Port;
-    int ars548_CFG_Dst_Port;
-    int ars548_CFG_Src_Port;
+    std::string frame_ID;
+    
+    std::string ars548CfgSrcIP;
+    std::string ars548CfgDstIP;
+    int ars548CfgSrcPort;
+    int ars548CfgDstPort;
    
     /**
      * @brief  ars548_driver Node. Used to try the driver. 
@@ -673,14 +676,18 @@ class ARS548Driver{
 
     nh->param("radarIP",ars548_IP, static_cast<std::string>(DEFAULT_RADAR_IP));
     nh->param("radarPort", ars548_Port, DEFAULT_RADAR_PORT);
-    nh->param("radarCfgDstIP",ars548_CFG_Dst_IP, static_cast<std::string>(DEFAULT_RADAR_CFG_DST_IP));
-    nh->param("radarCfgSrcIP",ars548_CFG_Src_IP, static_cast<std::string>(DEFAULT_RADAR_CFG_SRC_IP));
-    nh->param("radarCfgDstPort", ars548_CFG_Dst_Port, DEFAULT_RADAR_CFG_DST_PORT);
-    nh->param("radarCfgSrcPort", ars548_CFG_Src_Port, DEFAULT_RADAR_CFG_SRC_PORT);
     nh->param("frameID",frame_ID, static_cast<std::string>(DEFAULT_FRAME_ID));
 
+    nh->param("radarCfgSrcIP",ars548CfgSrcIP, static_cast<std::string>(DEFAULT_RADAR_CFG_SRC_IP));
+    nh->param("radarCfgSrcPort", ars548CfgSrcPort, DEFAULT_RADAR_CFG_SRC_PORT);
+    nh->param("radarCfgDstIP",ars548CfgDstIP, static_cast<std::string>(DEFAULT_RADAR_CFG_DST_IP));
+    nh->param("radarCfgDstPort", ars548CfgDstPort, DEFAULT_RADAR_CFG_DST_PORT);
+    
     // Read sensor configuration parameters from the parameter server
     readSensorConfiguration();
+
+    // NRS TODO:  Any validation function here to ensure parameters are within a valid range?  If there is a violation, just set to default and print a warning?
+    //validateSensorConfiguration(sensorConfig); // Not implemented yet
 
     // Send sensor configuration to the radar
     sendSensorConfiguration();
@@ -721,31 +728,31 @@ class ARS548Driver{
   ars548_messages::SensorConfiguration sensorConfig;
     
   void readSensorConfiguration() {
-    sensorConfig.ServiceID = 0;
-    sensorConfig.MethodID = 390;
-    sensorConfig.PayloadLength = 64; // Fixed length for SensorConfiguration
+    sensorConfig.ServiceID = 0; // Ref: ARS548 Ethernet Interface Specification, Messages table
+    sensorConfig.MethodID = 390; // Ref: ARS548 Ethernet Interface Specification, Messages table
+    sensorConfig.PayloadLength = 64; // Ref: ARS548 Ethernet Interface Specification, Messages table
     nh->param("sensor_longitudinal_position", sensorConfig.Longitudinal, 0.0);
     nh->param("sensor_lateral_position", sensorConfig.Lateral, 0.0);
     nh->param("sensor_vertical_position", sensorConfig.Vertical, 0.0);
     nh->param("sensor_yaw_angle", sensorConfig.Yaw, 0.0);
-    sensorConfig.Pitch = 0.0;
-    nh->param("sensor_plug_orientation", sensorConfig.PlugOrientation, 1);
+    sensorConfig.Pitch = 0.0; // Unused, set to zero
+    nh->param("sensor_plug_orientation", sensorConfig.PlugOrientation, 1); // 1 = Plug right (towards US driver's side when facing front of vehicle)
     nh->param("vehicle_length", sensorConfig.Length, 0.0);
     nh->param("vehicle_width", sensorConfig.Width, 0.0);
     nh->param("vehicle_height", sensorConfig.Height, 0.0);
     nh->param("vehicle_wheelbase", sensorConfig.Wheelbase, 0.0);
-    sensorConfig.MaximumDistance = 301;
-    sensorConfig.FrequencySlot = 1;
-    sensorConfig.CycleTime = 50;
-    sensorConfig.TimeSlot = 10;
-    sensorConfig.HCC = 1;
-    sensorConfig.Powersave_Standstill = 0;
-    sensorConfig.sensorIPAddress_0 = 0;
-    sensorConfig.sensorIPAddress_1 = 0;
+    sensorConfig.MaximumDistance = 301; // Don't care, not setting, but 301 m is default
+    sensorConfig.FrequencySlot = 1; // Don't care, not setting, but 1 is default for mid-band (76.48 GHz)
+    sensorConfig.CycleTime = 50; // Don't care, not setting, but 50 ms is default
+    sensorConfig.TimeSlot = 10;  // Don't care, not setting, but 10 ms is default
+    sensorConfig.HCC = 1; // Don't care, not setting, but 1=Default (Worldwide)
+    sensorConfig.Powersave_Standstill = 0; // Don't care, not setting, but 0=Off
+    sensorConfig.sensorIPAddress_0 = 0; // Don't care, not setting
+    sensorConfig.sensorIPAddress_1 = 0; // Don't care, not setting
     sensorConfig.NewSensorMounting = 1; // Set flag for new sensor mounting
     sensorConfig.NewVehicleParameters = 1; // Set flag for new vehicle parameters
-    sensorConfig.NewRadarParameters = 0;
-    sensorConfig.NewNetworkConfiguration = 0;
+    sensorConfig.NewRadarParameters = 0; // Clear flag to indicate no new radar parameters
+    sensorConfig.NewNetworkConfiguration = 0; // Clear flag to indicate no new network configuration
   }
 
     void sendSensorConfiguration() {

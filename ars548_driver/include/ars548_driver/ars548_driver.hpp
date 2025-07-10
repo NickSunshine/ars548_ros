@@ -725,30 +725,32 @@ class ARS548Driver{
   }
     
   private:
-  ars548_messages::SensorConfiguration sensorConfig;
+  SensorConfiguration sensorConfig;
     
   void readSensorConfiguration() {
     sensorConfig.ServiceID = 0; // Ref: ARS548 Ethernet Interface Specification, Messages table
     sensorConfig.MethodID = 390; // Ref: ARS548 Ethernet Interface Specification, Messages table
     sensorConfig.PayloadLength = 64; // Ref: ARS548 Ethernet Interface Specification, Messages table
-    nh->param("sensor_longitudinal_position", sensorConfig.Longitudinal, 0.0);
-    nh->param("sensor_lateral_position", sensorConfig.Lateral, 0.0);
-    nh->param("sensor_vertical_position", sensorConfig.Vertical, 0.0);
-    nh->param("sensor_yaw_angle", sensorConfig.Yaw, 0.0);
+    nh->param("sensor_longitudinal_position", sensorConfig.Longitudinal, 0.0f);
+    nh->param("sensor_lateral_position", sensorConfig.Lateral, 0.0f);
+    nh->param("sensor_vertical_position", sensorConfig.Vertical, 0.0f);
+    nh->param("sensor_yaw_angle", sensorConfig.Yaw, 0.0f);
     sensorConfig.Pitch = 0.0; // Unused, set to zero
-    nh->param("sensor_plug_orientation", sensorConfig.PlugOrientation, 1); // 1 = Plug right (towards US driver's side when facing front of vehicle)
-    nh->param("vehicle_length", sensorConfig.Length, 0.0);
-    nh->param("vehicle_width", sensorConfig.Width, 0.0);
-    nh->param("vehicle_height", sensorConfig.Height, 0.0);
-    nh->param("vehicle_wheelbase", sensorConfig.Wheelbase, 0.0);
+    int plug_orientation = 1;
+    nh->param("sensor_plug_orientation", plug_orientation, 1);
+    sensorConfig.PlugOrientation = static_cast<uint8_t>(plug_orientation);
+    nh->param("vehicle_length", sensorConfig.Length, 0.0f);
+    nh->param("vehicle_width", sensorConfig.Width, 0.0f);
+    nh->param("vehicle_height", sensorConfig.Height, 0.0f);
+    nh->param("vehicle_wheelbase", sensorConfig.Wheelbase, 0.0f);
     sensorConfig.MaximumDistance = 301; // Don't care, not setting, but 301 m is default
     sensorConfig.FrequencySlot = 1; // Don't care, not setting, but 1 is default for mid-band (76.48 GHz)
     sensorConfig.CycleTime = 50; // Don't care, not setting, but 50 ms is default
     sensorConfig.TimeSlot = 10;  // Don't care, not setting, but 10 ms is default
     sensorConfig.HCC = 1; // Don't care, not setting, but 1=Default (Worldwide)
     sensorConfig.Powersave_Standstill = 0; // Don't care, not setting, but 0=Off
-    sensorConfig.sensorIPAddress_0 = 0; // Don't care, not setting
-    sensorConfig.sensorIPAddress_1 = 0; // Don't care, not setting
+    sensorConfig.SensorIPAddress_0 = 0; // Don't care, not setting
+    sensorConfig.SensorIPAddress_1 = 0; // Don't care, not setting
     sensorConfig.NewSensorMounting = 1; // Set flag for new sensor mounting
     sensorConfig.NewVehicleParameters = 1; // Set flag for new vehicle parameters
     sensorConfig.NewRadarParameters = 0; // Clear flag to indicate no new radar parameters
@@ -767,8 +769,8 @@ class ARS548Driver{
         struct sockaddr_in srcAddr;
         memset(&srcAddr, 0, sizeof(srcAddr));
         srcAddr.sin_family = AF_INET;
-        srcAddr.sin_port = htons(ars548_CFG_Src_Port);
-        srcAddr.sin_addr.s_addr = inet_addr(ars548_CFG_Src_IP.c_str());
+        srcAddr.sin_port = htons(ars548CfgSrcPort);
+        srcAddr.sin_addr.s_addr = inet_addr(ars548CfgSrcIP.c_str());
 
         // Bind the socket to the source port
         if (bind(sock, (struct sockaddr*)&srcAddr, sizeof(srcAddr)) < 0) {
@@ -781,8 +783,8 @@ class ARS548Driver{
         struct sockaddr_in destAddr;
         memset(&destAddr, 0, sizeof(destAddr));
         destAddr.sin_family = AF_INET;
-        destAddr.sin_port = htons(ars548_CFG_Dst_Port);
-        destAddr.sin_addr.s_addr = inet_addr(ars548_CFG_Dst_IP.c_str());
+        destAddr.sin_port = htons(ars548CfgDstPort);
+        destAddr.sin_addr.s_addr = inet_addr(ars548CfgDstIP.c_str());
 
         // Serialize SensorConfiguration
         char buffer[1024];
@@ -872,11 +874,11 @@ class ARS548Driver{
         memcpy(buffer + offset, &powersaveStandstill, sizeof(powersaveStandstill));
         offset += sizeof(powersaveStandstill);
 
-        uint32_t sensorIPAddress_0 = htonl(sensorConfig.sensorIPAddress_0);
+        uint32_t sensorIPAddress_0 = htonl(sensorConfig.SensorIPAddress_0);
         memcpy(buffer + offset, &sensorIPAddress_0, sizeof(sensorIPAddress_0));
         offset += sizeof(sensorIPAddress_0);
 
-        uint32_t sensorIPAddress_1 = htonl(sensorConfig.sensorIPAddress_1);
+        uint32_t sensorIPAddress_1 = htonl(sensorConfig.SensorIPAddress_1);
         memcpy(buffer + offset, &sensorIPAddress_1, sizeof(sensorIPAddress_1));
         offset += sizeof(sensorIPAddress_1);
 

@@ -20,6 +20,7 @@
 #include "ars548_messages/Status.h"
 #include "ars548_messages/DetectionList.h"
 #include "ars548_messages/ObjectList.h"
+#include "ars548_messages/SensorConfiguration.h"
 #include "ars548_data.h"
 using namespace std::chrono_literals;
 
@@ -27,8 +28,12 @@ using namespace std::chrono_literals;
  * @brief Data obtained from the RadarSensors_Annex_AES548_IO SW 05.48.04.pdf 
  */
 #define DEFAULT_RADAR_IP "224.0.2.2"
+#define DEFAULT_RADAR_CFG_DST_IP "10.13.1.113"
+#define DEFAULT_RADAR_CFG_SRC_IP "10.13.1.166"
 #define RADAR_INTERFACE "10.13.1.166"
 #define DEFAULT_RADAR_PORT 42102
+#define DEFAULT_RADAR_CFG_DST_PORT 42101
+#define DEFAULT_RADAR_CFG_SRC_PORT 42401
 #define DEFAULT_FRAME_ID "ARS_548" 
 #define MSGBUFSIZE 102400
 #define MAX_OBJECTS 50
@@ -652,8 +657,12 @@ class ARS548Driver{
 
     public:
     std::string ars548_IP;
+    std::string ars548_CFG_Src_IP;
+    std::string ars548_CFG_Dst_IP;
     std::string frame_ID;
     int ars548_Port;
+    int ars548_CFG_Dst_Port;
+    int ars548_CFG_Src_Port;
    
     /**
      * @brief  ars548_driver Node. Used to try the driver. 
@@ -664,7 +673,17 @@ class ARS548Driver{
 
     nh->param("radarIP",ars548_IP, static_cast<std::string>(DEFAULT_RADAR_IP));
     nh->param("radarPort", ars548_Port, DEFAULT_RADAR_PORT);
+    nh->param("radarCfgDstIP",ars548_CFG_Dst_IP, static_cast<std::string>(DEFAULT_RADAR_CFG_DST_IP));
+    nh->param("radarCfgSrcIP",ars548_CFG_Src_IP, static_cast<std::string>(DEFAULT_RADAR_CFG_SRC_IP));
+    nh->param("radarCfgDstPort", ars548_CFG_Dst_Port, DEFAULT_RADAR_CFG_DST_PORT);
+    nh->param("radarCfgSrcPort", ars548_CFG_Src_Port, DEFAULT_RADAR_CFG_SRC_PORT);
     nh->param("frameID",frame_ID, static_cast<std::string>(DEFAULT_FRAME_ID));
+
+    // Read sensor configuration parameters from the parameter server
+    readSensorConfiguration();
+
+    // Send sensor configuration to the radar
+    sendSensorConfiguration();
 
     //Creation of their modifiers
 
@@ -698,4 +717,185 @@ class ARS548Driver{
     readData();
   }
     
+  private:
+  ars548_messages::SensorConfiguration sensorConfig;
+    
+  void readSensorConfiguration() {
+    sensorConfig.ServiceID = 0;
+    sensorConfig.MethodID = 390;
+    sensorConfig.PayloadLength = 64; // Fixed length for SensorConfiguration
+    nh->param("sensor_longitudinal_position", sensorConfig.Longitudinal, 0.0);
+    nh->param("sensor_lateral_position", sensorConfig.Lateral, 0.0);
+    nh->param("sensor_vertical_position", sensorConfig.Vertical, 0.0);
+    nh->param("sensor_yaw_angle", sensorConfig.Yaw, 0.0);
+    sensorConfig.Pitch = 0.0;
+    nh->param("sensor_plug_orientation", sensorConfig.PlugOrientation, 1);
+    nh->param("vehicle_length", sensorConfig.Length, 0.0);
+    nh->param("vehicle_width", sensorConfig.Width, 0.0);
+    nh->param("vehicle_height", sensorConfig.Height, 0.0);
+    nh->param("vehicle_wheelbase", sensorConfig.Wheelbase, 0.0);
+    sensorConfig.MaximumDistance = 301;
+    sensorConfig.FrequencySlot = 1;
+    sensorConfig.CycleTime = 50;
+    sensorConfig.TimeSlot = 10;
+    sensorConfig.HCC = 1;
+    sensorConfig.Powersave_Standstill = 0;
+    sensorConfig.sensorIPAddress_0 = 0;
+    sensorConfig.sensorIPAddress_1 = 0;
+    sensorConfig.NewSensorMounting = 1; // Set flag for new sensor mounting
+    sensorConfig.NewVehicleParameters = 1; // Set flag for new vehicle parameters
+    sensorConfig.NewRadarParameters = 0;
+    sensorConfig.NewNetworkConfiguration = 0;
+  }
+
+    void sendSensorConfiguration() {
+        // Create a UDP socket
+        int sock = socket(AF_INET, SOCK_DGRAM, 0);
+        if (sock < 0) {
+            perror("socket");
+            return;
+        }
+
+        // Set up source address
+        struct sockaddr_in srcAddr;
+        memset(&srcAddr, 0, sizeof(srcAddr));
+        srcAddr.sin_family = AF_INET;
+        srcAddr.sin_port = htons(ars548_CFG_Src_Port);
+        srcAddr.sin_addr.s_addr = inet_addr(ars548_CFG_Src_IP.c_str());
+
+        // Bind the socket to the source port
+        if (bind(sock, (struct sockaddr*)&srcAddr, sizeof(srcAddr)) < 0) {
+            perror("bind");
+            close(sock);
+            return;
+        }
+
+        // Set up destination address
+        struct sockaddr_in destAddr;
+        memset(&destAddr, 0, sizeof(destAddr));
+        destAddr.sin_family = AF_INET;
+        destAddr.sin_port = htons(ars548_CFG_Dst_Port);
+        destAddr.sin_addr.s_addr = inet_addr(ars548_CFG_Dst_IP.c_str());
+
+        // Serialize SensorConfiguration
+        char buffer[1024];
+        size_t offset = 0;
+
+        // Header 1st Part
+        uint16_t serviceID = htons(sensorConfig.ServiceID);
+        memcpy(buffer + offset, &serviceID, sizeof(serviceID));
+        offset += sizeof(serviceID);
+
+        uint16_t methodID = htons(sensorConfig.MethodID);
+        memcpy(buffer + offset, &methodID, sizeof(methodID));
+        offset += sizeof(methodID);
+
+        uint32_t length = htonl(sensorConfig.PayloadLength);
+        memcpy(buffer + offset, &length, sizeof(length));
+        offset += sizeof(length);
+
+        // Payload
+        auto serializeFloat32 = [](float value) -> uint32_t {
+            uint32_t temp;
+            memcpy(&temp, &value, sizeof(temp));
+            return htonl(temp);
+        };
+
+        uint32_t longitudinal = serializeFloat32(sensorConfig.Longitudinal);
+        memcpy(buffer + offset, &longitudinal, sizeof(longitudinal));
+        offset += sizeof(longitudinal);
+
+        uint32_t lateral = serializeFloat32(sensorConfig.Lateral);
+        memcpy(buffer + offset, &lateral, sizeof(lateral));
+        offset += sizeof(lateral);
+
+        uint32_t vertical = serializeFloat32(sensorConfig.Vertical);
+        memcpy(buffer + offset, &vertical, sizeof(vertical));
+        offset += sizeof(vertical);
+
+        uint32_t yaw = serializeFloat32(sensorConfig.Yaw);
+        memcpy(buffer + offset, &yaw, sizeof(yaw));
+        offset += sizeof(yaw);
+
+        uint32_t pitch = serializeFloat32(sensorConfig.Pitch);
+        memcpy(buffer + offset, &pitch, sizeof(pitch));
+        offset += sizeof(pitch);
+
+        uint8_t plugOrientation = sensorConfig.PlugOrientation;
+        memcpy(buffer + offset, &plugOrientation, sizeof(plugOrientation));
+        offset += sizeof(plugOrientation);
+
+        uint32_t vehicleLength = serializeFloat32(sensorConfig.Length);
+        memcpy(buffer + offset, &vehicleLength, sizeof(vehicleLength));
+        offset += sizeof(vehicleLength);
+
+        uint32_t vehicleWidth = serializeFloat32(sensorConfig.Width);
+        memcpy(buffer + offset, &vehicleWidth, sizeof(vehicleWidth));
+        offset += sizeof(vehicleWidth);
+
+        uint32_t vehicleHeight = serializeFloat32(sensorConfig.Height);
+        memcpy(buffer + offset, &vehicleHeight, sizeof(vehicleHeight));
+        offset += sizeof(vehicleHeight);
+
+        uint32_t vehicleWheelbase = serializeFloat32(sensorConfig.Wheelbase);
+        memcpy(buffer + offset, &vehicleWheelbase, sizeof(vehicleWheelbase));
+        offset += sizeof(vehicleWheelbase);
+
+        uint16_t maximumDistance = htons(sensorConfig.MaximumDistance);
+        memcpy(buffer + offset, &maximumDistance, sizeof(maximumDistance));
+        offset += sizeof(maximumDistance);
+
+        uint8_t frequencySlot = sensorConfig.FrequencySlot;
+        memcpy(buffer + offset, &frequencySlot, sizeof(frequencySlot));
+        offset += sizeof(frequencySlot);
+
+        uint8_t cycleTime = sensorConfig.CycleTime;
+        memcpy(buffer + offset, &cycleTime, sizeof(cycleTime));
+        offset += sizeof(cycleTime);
+
+        uint8_t timeSlot = sensorConfig.TimeSlot;
+        memcpy(buffer + offset, &timeSlot, sizeof(timeSlot));
+        offset += sizeof(timeSlot);
+
+        uint8_t hcc = sensorConfig.HCC;
+        memcpy(buffer + offset, &hcc, sizeof(hcc));
+        offset += sizeof(hcc);
+
+        uint8_t powersaveStandstill = sensorConfig.Powersave_Standstill;
+        memcpy(buffer + offset, &powersaveStandstill, sizeof(powersaveStandstill));
+        offset += sizeof(powersaveStandstill);
+
+        uint32_t sensorIPAddress_0 = htonl(sensorConfig.sensorIPAddress_0);
+        memcpy(buffer + offset, &sensorIPAddress_0, sizeof(sensorIPAddress_0));
+        offset += sizeof(sensorIPAddress_0);
+
+        uint32_t sensorIPAddress_1 = htonl(sensorConfig.sensorIPAddress_1);
+        memcpy(buffer + offset, &sensorIPAddress_1, sizeof(sensorIPAddress_1));
+        offset += sizeof(sensorIPAddress_1);
+
+        uint8_t newSensorMounting = sensorConfig.NewSensorMounting;
+        memcpy(buffer + offset, &newSensorMounting, sizeof(newSensorMounting));
+        offset += sizeof(newSensorMounting);
+
+        uint8_t newVehicleParameters = sensorConfig.NewVehicleParameters;
+        memcpy(buffer + offset, &newVehicleParameters, sizeof(newVehicleParameters));
+        offset += sizeof(newVehicleParameters);
+
+        uint8_t newRadarParameters = sensorConfig.NewRadarParameters;
+        memcpy(buffer + offset, &newRadarParameters, sizeof(newRadarParameters));
+        offset += sizeof(newRadarParameters);
+
+        uint8_t newNetworkConfiguration = sensorConfig.NewNetworkConfiguration;
+        memcpy(buffer + offset, &newNetworkConfiguration, sizeof(newNetworkConfiguration));
+        offset += sizeof(newNetworkConfiguration);
+
+        // Send the data
+        ssize_t sentBytes = sendto(sock, buffer, offset, 0, (struct sockaddr*)&destAddr, sizeof(destAddr));
+        if (sentBytes < 0) {
+            perror("sendto");
+        }
+
+        // Close the socket
+        close(sock);
+    }
 };

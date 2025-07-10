@@ -1,11 +1,37 @@
 <launch>
-    <arg name="frameID_Radar" default="ARS_548"/>
     <arg name="radarIP" default="224.0.2.2"/>
     <arg name="radarPort" default="42102"/>
+    <arg name="radarCfgDstIP" default="10.13.1.113"/>
+    <arg name="radarCfgSrcIP" default="10.13.1.166"/>
+    <arg name="radarCfgDstPort" default="42101"/>
+    <arg name="radarCfgSrcPort" default="42401"/>
+    <arg name="frameID_Radar" default="ARS_548"/>
+    <arg name="sensor_longitudinal_position" default="0.0"/>
+    <arg name="sensor_lateral_position" default="0.0"/>
+    <arg name="sensor_vertical_position" default="0.0"/>
+    <arg name="sensor_yaw_angle" default="0.0"/>
+    <arg name="sensor_plug_orientation" default="1"/>
+    <arg name="vehicle_width" default="0.0"/>
+    <arg name="vehicle_length" default="0.0"/>
+    <arg name="vehicle_height" default="0.0"/>
+    <arg name="vehicle_wheelbase" default="0.0"/>
     <node pkg="ars548_driver" type="ars548_driver" name="radar">
         <param name="radarIP" value="$(arg radarIP)"/>
         <param name="radarPort" value="$(arg radarPort)"/>
+        <param name="radarCfgDstIP" value="$(arg radarCfgDstIP)"/>
+        <param name="radarCfgSrcIP" value="$(arg radarCfgSrcIP)"/>
+        <param name="radarCfgDstPort" value="$(arg radarCfgDstPort)"/>
+        <param name="radarCfgSrcPort" value="$(arg radarCfgSrcPort)"/>
         <param name="frameID" value="$(arg frameID_Radar)"/>
+        <param name="sensor_longitudinal_position" value="$(arg sensor_longitudinal_position)"/>
+        <param name="sensor_lateral_position" value="$(arg sensor_lateral_position)"/>
+        <param name="sensor_vertical_position" value="$(arg sensor_vertical_position)"/>
+        <param name="sensor_yaw_angle" value="$(arg sensor_yaw_angle)"/>
+        <param name="sensor_plug_orientation" value="$(arg sensor_plug_orientation)"/>
+        <param name="vehicle_width" value="$(arg vehicle_width)"/>
+        <param name="vehicle_length" value="$(arg vehicle_length)"/>
+        <param name="vehicle_height" value="$(arg vehicle_height)"/>
+        <param name="vehicle_wheelbase" value="$(arg vehicle_wheelbase)"/>
     </node>
     
     <node pkg="rviz" type="rviz" name="Visualization" args="-d $(find ars548_driver)/rviz/RadarVisualization.rviz"/>

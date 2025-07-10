@@ -730,14 +730,14 @@ class ARS548Driver{
   void readSensorConfiguration() {
     sensorConfig.ServiceID = 0; // Ref: ARS548 Ethernet Interface Specification, Messages table
     sensorConfig.MethodID = 390; // Ref: ARS548 Ethernet Interface Specification, Messages table
-    sensorConfig.PayloadLength = 64; // Ref: ARS548 Ethernet Interface Specification, Messages table
+    sensorConfig.PayloadLength = 56; // Ref: ARS548 Ethernet Interface Specification, Messages table
     nh->param("sensor_longitudinal_position", sensorConfig.Longitudinal, 0.0f);
     nh->param("sensor_lateral_position", sensorConfig.Lateral, 0.0f);
     nh->param("sensor_vertical_position", sensorConfig.Vertical, 0.0f);
     nh->param("sensor_yaw_angle", sensorConfig.Yaw, 0.0f);
     sensorConfig.Pitch = 0.0; // Unused, set to zero
-    int plug_orientation = 1;
-    nh->param("sensor_plug_orientation", plug_orientation, 1);
+    int plug_orientation;
+    nh->param("sensor_plug_orientation", plug_orientation, 0);
     sensorConfig.PlugOrientation = static_cast<uint8_t>(plug_orientation);
     nh->param("vehicle_length", sensorConfig.Length, 0.0f);
     nh->param("vehicle_width", sensorConfig.Width, 0.0f);
@@ -831,7 +831,7 @@ class ARS548Driver{
         offset += sizeof(pitch);
 
         uint8_t plugOrientation = sensorConfig.PlugOrientation;
-        memcpy(buffer + offset, &plugOrientation, sizeof(plugOrientation));
+	memcpy(buffer + offset, &plugOrientation, sizeof(plugOrientation));
         offset += sizeof(plugOrientation);
 
         uint32_t vehicleLength = serializeFloat32(sensorConfig.Length);

@@ -6,15 +6,15 @@
     <arg name="radarCfgSrcPort" default="42401"/>
     <arg name="radarCfgDstIP" default="10.13.1.113"/>
     <arg name="radarCfgDstPort" default="42101"/>
-    <arg name="sensor_longitudinal_position" default="0.0"/>
-    <arg name="sensor_lateral_position" default="0.0"/>
-    <arg name="sensor_vertical_position" default="5.0"/>
+    <arg name="sensor_longitudinal_position" default="1.12"/>
+    <arg name="sensor_lateral_position" default="0.24"/>
+    <arg name="sensor_vertical_position" default="0.54"/>
     <arg name="sensor_yaw_angle" default="0.0"/>
     <arg name="sensor_plug_orientation" default="0"/>
-    <arg name="vehicle_width" default="50.0"/>
-    <arg name="vehicle_length" default="50.0"/>
-    <arg name="vehicle_height" default="50.0"/>
-    <arg name="vehicle_wheelbase" default="50.0"/>
+    <arg name="vehicle_width" default="1.86436"/>
+    <arg name="vehicle_length" default="4.93014"/>
+    <arg name="vehicle_height" default="1.47574"/>
+    <arg name="vehicle_wheelbase" default="2.84988"/>
     <node pkg="ars548_driver" type="ars548_driver" name="radar" output="screen">
         <param name="radarIP" value="$(arg radarIP)"/>
         <param name="radarPort" value="$(arg radarPort)"/>

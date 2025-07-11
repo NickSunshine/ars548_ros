@@ -690,6 +690,7 @@ class ARS548Driver{
     //validateSensorConfiguration(sensorConfig); // Not implemented yet
 
     // Send sensor configuration to the radar
+    // NRS TODO:  This function sends one message via UDP to the radar.  Should we check status to ensure it was received and accepted? Max # tries?
     sendSensorConfiguration();
 
     //Creation of their modifiers
@@ -733,16 +734,16 @@ class ARS548Driver{
     sensorConfig.PayloadLength = 56; // Ref: ARS548 Ethernet Interface Specification, Messages table
     nh->param("sensor_longitudinal_position", sensorConfig.Longitudinal, 0.0f);
     nh->param("sensor_lateral_position", sensorConfig.Lateral, 0.0f);
-    nh->param("sensor_vertical_position", sensorConfig.Vertical, 0.0f);
+    nh->param("sensor_vertical_position", sensorConfig.Vertical, 5.0f);
     nh->param("sensor_yaw_angle", sensorConfig.Yaw, 0.0f);
     sensorConfig.Pitch = 0.0; // Unused, set to zero
-    int plug_orientation;
+    int plug_orientation; // Temporary variable to read int from parameter server
     nh->param("sensor_plug_orientation", plug_orientation, 0);
     sensorConfig.PlugOrientation = static_cast<uint8_t>(plug_orientation);
-    nh->param("vehicle_length", sensorConfig.Length, 0.0f);
-    nh->param("vehicle_width", sensorConfig.Width, 0.0f);
-    nh->param("vehicle_height", sensorConfig.Height, 0.0f);
-    nh->param("vehicle_wheelbase", sensorConfig.Wheelbase, 0.0f);
+    nh->param("vehicle_length", sensorConfig.Length, 50.0f);
+    nh->param("vehicle_width", sensorConfig.Width, 50.0f);
+    nh->param("vehicle_height", sensorConfig.Height, 50.0f);
+    nh->param("vehicle_wheelbase", sensorConfig.Wheelbase, 50.0f);
     sensorConfig.MaximumDistance = 301; // Don't care, not setting, but 301 m is default
     sensorConfig.FrequencySlot = 1; // Don't care, not setting, but 1 is default for mid-band (76.48 GHz)
     sensorConfig.CycleTime = 50; // Don't care, not setting, but 50 ms is default

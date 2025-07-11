@@ -34,6 +34,8 @@
         <param name="vehicle_wheelbase" value="$(arg vehicle_wheelbase)"/>
     </node>
 
+    <node pkg="ars548_driver" type="ars548_dynamics" name="ars548_dynamics" output="screen"/>
+    
     <node pkg="rviz" type="rviz" name="Visualization" args="-d $(find ars548_driver)/rviz/RadarVisualization.rviz"/>
     <node pkg="tf2_ros" type="static_transform_publisher" name="radar_tf" args="0 0 0 0 0 0 PointCloud ARS_548"/>
 </launch>

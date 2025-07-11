@@ -38,6 +38,10 @@ add_executable(ars548_driver src/ars548_driver_node.cpp)
 add_dependencies(ars548_driver ${catkin_EXPORTED_TARGETS})
 target_link_libraries(ars548_driver ${catkin_LIBRARIES} )
 
+add_executable(ars548_dynamics src/ars548_dynamics_node.cpp)
+add_dependencies(ars548_dynamics ${catkin_EXPORTED_TARGETS})
+target_link_libraries(ars548_dynamics ${catkin_LIBRARIES})
+
 
 # TODO: driver filter
 #add_executable(ars548_driver_filter src/ars548_driver_filter.cpp)

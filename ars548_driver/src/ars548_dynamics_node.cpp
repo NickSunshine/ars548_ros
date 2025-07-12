@@ -42,13 +42,13 @@ int main(int argc, char** argv)
         {
             std::lock_guard<std::mutex> lock(imu_mutex);
             if (imu_msg_received) {
-                double yaw_rate = latest_imu_msg.angular_velocity.z;
+                double yaw_rate = latest_imu_msg.angular_velocity.z * 180.0 / M_PI; // Convert to deg/s
                 double longitudinal_accel = latest_imu_msg.linear_acceleration.x;
                 double lateral_accel = latest_imu_msg.linear_acceleration.y;
-                // Use yaw_rate, longitudinal_accel, and lateral_accel or other IMU data here
-                ROS_INFO_STREAM("[Loop] Latest yaw rate: " << yaw_rate
-                                << ", longitudinal accel: " << longitudinal_accel
-                                << ", lateral accel: " << lateral_accel);
+                // Use yaw_rate (deg/s), longitudinal_accel, and lateral_accel or other IMU data here
+                ROS_INFO_STREAM("[Loop] Latest yaw rate (deg/s): " << yaw_rate
+                                << ", longitudinal accel (m/s^2): " << longitudinal_accel
+                                << ", lateral accel (m/s^2): " << lateral_accel);
             }
         }
 

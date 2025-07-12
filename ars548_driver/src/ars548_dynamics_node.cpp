@@ -23,7 +23,7 @@ int main(int argc, char** argv)
     ROS_INFO("ars548_dynamics_node started.");
 
     std::string imu_topic;
-    nh.param<std::string>("yaw_rate_topic", imu_topic, "");
+    nh.param<std::string>("imu_topic", imu_topic, "");
 
     ros::Subscriber imu_sub;
     if (imu_topic.empty()) {

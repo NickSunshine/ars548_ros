@@ -16,7 +16,7 @@
     <arg name="vehicle_height" default="1.47574"/>
     <arg name="vehicle_wheelbase" default="2.84988"/>
 
-    <arg name="yaw_rate_topic" default="/inertial_sense/imu_sae"/>
+    <arg name="imu_topic" default="/inertial_sense/imu_sae"/>
     
     <node pkg="ars548_driver" type="ars548_driver" name="radar" output="screen">
         <param name="radarIP" value="$(arg radarIP)"/>
@@ -38,7 +38,7 @@
     </node>
 
     <node pkg="ars548_driver" type="ars548_dynamics" name="ars548_dynamics" output="screen">
-        <param name="yaw_rate_topic" value="$(arg yaw_rate_topic)"/>
+        <param name="imu_topic" value="$(arg imu_topic)"/>
     </node>
     
     <node pkg="rviz" type="rviz" name="Visualization" args="-d $(find ars548_driver)/rviz/RadarVisualization.rviz"/>

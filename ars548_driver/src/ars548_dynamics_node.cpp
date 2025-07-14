@@ -137,8 +137,14 @@ int main(int argc, char** argv)
 
     ros::Rate loop_rate(20); // 20 Hz
 
+
+    std::string node_name = ros::this_node::getName();
+
     while (ros::ok())
     {
+        ros::Time now = ros::Time::now();
+        std::string stamp_str = std::to_string(now.sec) + "." + std::to_string(now.nsec);
+
         // Example: Access the latest IMU data safely
         {
             std::lock_guard<std::mutex> lock(imu_mutex);
@@ -146,7 +152,7 @@ int main(int argc, char** argv)
                 double yaw_rate = latest_imu_msg.angular_velocity.z * 180.0 / M_PI; // Convert to deg/s
                 double longitudinal_accel = latest_imu_msg.linear_acceleration.x; // m/s^2
                 double lateral_accel = latest_imu_msg.linear_acceleration.y; // m/s^2
-                ROS_INFO_STREAM("[Loop] Latest yaw rate (deg/s): " << yaw_rate
+                ROS_INFO_STREAM("[" << node_name << "] [" << stamp_str << "] [Loop] Latest yaw rate (deg/s): " << yaw_rate
                                 << ", longitudinal accel (m/s^2): " << longitudinal_accel
                                 << ", lateral accel (m/s^2): " << lateral_accel);
             }
@@ -157,7 +163,7 @@ int main(int argc, char** argv)
             std::lock_guard<std::mutex> lock(speed_mutex);
             if (speed_msg_received) {
                 double speed = latest_speed_msg.data * 3.6; // Convert to km/h
-                ROS_INFO_STREAM("[Loop] Latest speed: " << speed << " km/h");
+                ROS_INFO_STREAM("[" << node_name << "] [" << stamp_str << "] [Loop] Latest speed: " << speed << " km/h");
             }
         }
 
@@ -167,7 +173,7 @@ int main(int argc, char** argv)
             if (steering_msg_received) {
                 // Convert steering wheel angle rad to steering front axle degrees using parameterized gear ratio
                 double front_wheel_angle_deg = latest_steering_msg.steering_wheel_angle * (180.0 / M_PI) / steering_gear_ratio;
-                ROS_INFO_STREAM("[Loop] Latest front wheel angle: " << front_wheel_angle_deg << " degrees (gear ratio: " << steering_gear_ratio << ")");
+                ROS_INFO_STREAM("[" << node_name << "] [" << stamp_str << "] [Loop] Latest front wheel angle: " << front_wheel_angle_deg << " degrees (gear ratio: " << steering_gear_ratio << ")");
             }
         }
 
@@ -193,7 +199,7 @@ int main(int argc, char** argv)
                         latest_direction = DrivingDirection::Standstill;
                         break;
                 }
-                ROS_INFO_STREAM("[Loop] Latest gear state: " << gear_str << " (" << static_cast<int>(latest_gear) << ") | Driving direction: " << directionToString(latest_direction) << " (" << static_cast<int>(latest_direction) << ")");
+                ROS_INFO_STREAM("[" << node_name << "] [" << stamp_str << "] [Loop] Latest gear state: " << gear_str << " (" << static_cast<int>(latest_gear) << ") | Driving direction: " << directionToString(latest_direction) << " (" << static_cast<int>(latest_direction) << ")");
             }
         }
 

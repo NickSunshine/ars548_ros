@@ -13,6 +13,7 @@
   <depend>std_msgs</depend>
   <depend>geometry_msgs</depend>
   <depend>ars548_messages</depend>
+  <depend>dbw_mkz_msgs</depend>
   <depend>tf2</depend>
   <depend>tf2_ros</depend>
   <exec_depend>roslaunch</exec_depend>

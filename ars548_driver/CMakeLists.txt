@@ -19,6 +19,7 @@ find_package(
              sensor_msgs
              geometry_msgs
              ars548_messages
+             dbw_mkz_msgs
              roscpp
              tf2_ros
 )
@@ -31,7 +32,7 @@ include_directories(
 
 catkin_package (
     INCLUDE_DIRS include
-    CATKIN_DEPENDS ars548_messages
+    CATKIN_DEPENDS ars548_messages dbw_mkz_msgs
 )
 
 add_executable(ars548_driver src/ars548_driver_node.cpp)

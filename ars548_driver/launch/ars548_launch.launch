@@ -17,6 +17,7 @@
     <arg name="vehicle_wheelbase" default="2.84988"/>
 
     <arg name="imu_topic" default="/inertial_sense/imu_sae"/>
+    <arg name="speed_topic" default="/vtti/speed_float"/>
     
     <node pkg="ars548_driver" type="ars548_driver" name="radar" output="screen">
         <param name="radarIP" value="$(arg radarIP)"/>
@@ -39,6 +40,7 @@
 
     <node pkg="ars548_driver" type="ars548_dynamics" name="ars548_dynamics" output="screen">
         <param name="imu_topic" value="$(arg imu_topic)"/>
+        <param name="speed_topic" value="$(arg speed_topic)"/>
     </node>
     
     <node pkg="rviz" type="rviz" name="Visualization" args="-d $(find ars548_driver)/rviz/RadarVisualization.rviz"/>

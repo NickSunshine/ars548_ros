@@ -19,6 +19,8 @@
     <arg name="imu_topic" default="/inertial_sense/imu_sae"/>
     <arg name="speed_topic" default="/vtti/speed_float"/>
     <arg name="steering_topic" default="/vehicle/steering_report"/>
+    <arg name="steering_gear_ratio" default="14.81"/>
+    <arg name="gear_topic" default="/vehicle/gear_report"/>
     
     <node pkg="ars548_driver" type="ars548_driver" name="radar" output="screen">
         <param name="radarIP" value="$(arg radarIP)"/>
@@ -43,6 +45,8 @@
         <param name="imu_topic" value="$(arg imu_topic)"/>
         <param name="speed_topic" value="$(arg speed_topic)"/>
         <param name="steering_topic" value="$(arg steering_topic)"/>
+        <param name="steering_gear_ratio" value="$(arg steering_gear_ratio)"/>
+        <param name="gear_topic" value="$(arg gear_topic)"/>
     </node>
     
     <node pkg="rviz" type="rviz" name="Visualization" args="-d $(find ars548_driver)/rviz/RadarVisualization.rviz"/>

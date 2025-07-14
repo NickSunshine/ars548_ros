@@ -1,3 +1,4 @@
+
 #include <ros/ros.h>
 #include <sensor_msgs/Imu.h>
 #include <std_msgs/Float64.h>
@@ -5,6 +6,16 @@
 #include <dbw_mkz_msgs/GearReport.h>
 #include <dbw_mkz_msgs/Gear.h>
 #include <mutex>
+
+// UDP socket includes (from ars548_driver.hpp)
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <errno.h>
+#include <string.h>
+#include <stdio.h>
+
 
 template<typename T>
 struct ThreadSafeData {
@@ -44,14 +55,12 @@ std::string gearToString(uint8_t gear)
 
 int main(int argc, char** argv)
 {
+    ros::init(argc, argv, "ars548_dynamics_node");
+    ros::NodeHandle nh("~");
+    ROS_INFO("ars548_dynamics_node started.");
+
+    // --- IMU Setup ---
     ThreadSafeData<sensor_msgs::Imu> imu_data;
-    ThreadSafeData<std_msgs::Float64> speed_data;
-    ThreadSafeData<dbw_mkz_msgs::SteeringReport> steering_data;
-    ThreadSafeData<dbw_mkz_msgs::GearReport> gear_data;
-
-    uint8_t latest_gear = dbw_mkz_msgs::Gear::NONE;
-    DrivingDirection latest_direction = DrivingDirection::Standstill;
-
     // Lambda callback for IMU
     auto imu_callback = [&](const sensor_msgs::Imu::ConstPtr& msg) {
         std::lock_guard<std::mutex> lock(imu_data.mtx);
@@ -59,47 +68,8 @@ int main(int argc, char** argv)
         imu_data.received = true;
         // Further IMU data processing here
     };
-
-    // Lambda callback for Speed
-    auto speed_callback = [&](const std_msgs::Float64::ConstPtr& msg) {
-        std::lock_guard<std::mutex> lock(speed_data.mtx);
-        speed_data.msg = *msg;
-        speed_data.received = true;
-        // Further speed data processing here
-    };
-
-    // Lambda callback for Steering
-    auto steering_callback = [&](const dbw_mkz_msgs::SteeringReport::ConstPtr& msg) {
-        std::lock_guard<std::mutex> lock(steering_data.mtx);
-        steering_data.msg = *msg;
-        steering_data.received = true;
-        // Further steering data processing here
-    };
-
-    // Lambda callback for Gear
-    auto gear_callback = [&](const dbw_mkz_msgs::GearReport::ConstPtr& msg) {
-        std::lock_guard<std::mutex> lock(gear_data.mtx);
-        gear_data.msg = *msg;
-        gear_data.received = true;
-        // Further gear data processing here
-    };
-
-    ros::init(argc, argv, "ars548_dynamics_node");
-    ros::NodeHandle nh("~");
-
-    ROS_INFO("ars548_dynamics_node started.");
-
     std::string imu_topic;
-    std::string speed_topic;
-    std::string steering_topic;
-    double steering_gear_ratio = 14.81;
-    std::string gear_topic;
     nh.param<std::string>("imu_topic", imu_topic, "");
-    nh.param<std::string>("speed_topic", speed_topic, "");
-    nh.param<std::string>("steering_topic", steering_topic, "");
-    nh.param<std::string>("gear_topic", gear_topic, "");
-    nh.param<double>("steering_gear_ratio", steering_gear_ratio, 14.81);
-
     ros::Subscriber imu_sub;
     if (imu_topic.empty()) {
         ROS_ERROR("Parameter 'imu_topic' is not set. Skipping IMU subscription.");
@@ -107,7 +77,19 @@ int main(int argc, char** argv)
         imu_sub = nh.subscribe<sensor_msgs::Imu>(imu_topic, 1, imu_callback);
         ROS_INFO_STREAM("Subscribed to IMU topic: " << imu_topic);
     }
-
+    // --- End IMU Setup ---
+    
+    // --- Speed Setup ---
+    ThreadSafeData<std_msgs::Float64> speed_data;
+    // Lambda callback for Speed
+    auto speed_callback = [&](const std_msgs::Float64::ConstPtr& msg) {
+        std::lock_guard<std::mutex> lock(speed_data.mtx);
+        speed_data.msg = *msg;
+        speed_data.received = true;
+        // Further speed data processing here
+    };
+    std::string speed_topic;
+    nh.param<std::string>("speed_topic", speed_topic, "");
     ros::Subscriber speed_sub;
     if (speed_topic.empty()) {
         ROS_ERROR("Parameter 'speed_topic' is not set. Skipping speed subscription.");
@@ -115,7 +97,20 @@ int main(int argc, char** argv)
         speed_sub = nh.subscribe<std_msgs::Float64>(speed_topic, 1, speed_callback);
         ROS_INFO_STREAM("Subscribed to speed topic: " << speed_topic);
     }
+    // --- End Speed Setup ---
 
+    // --- Steering Setup ---
+    ThreadSafeData<dbw_mkz_msgs::SteeringReport> steering_data;
+    // Lambda callback for Steering
+    auto steering_callback = [&](const dbw_mkz_msgs::SteeringReport::ConstPtr& msg) {
+        std::lock_guard<std::mutex> lock(steering_data.mtx);
+        steering_data.msg = *msg;
+        steering_data.received = true;
+        // Further steering data processing here
+    };
+    std::string steering_topic;
+    double steering_gear_ratio = 14.81;
+    nh.param<std::string>("steering_topic", steering_topic, "");
     ros::Subscriber steering_sub;
     if (steering_topic.empty()) {
         ROS_ERROR("Parameter 'steering_topic' is not set. Skipping steering subscription.");
@@ -123,7 +118,22 @@ int main(int argc, char** argv)
         steering_sub = nh.subscribe<dbw_mkz_msgs::SteeringReport>(steering_topic, 1, steering_callback);
         ROS_INFO_STREAM("Subscribed to steering topic: " << steering_topic);
     }
+    // --- End Steering Setup ---
 
+    // --- Gear Setup ---
+    ThreadSafeData<dbw_mkz_msgs::GearReport> gear_data;
+    uint8_t latest_gear = dbw_mkz_msgs::Gear::NONE;
+    DrivingDirection latest_direction = DrivingDirection::Standstill;
+    // Lambda callback for Gear
+    auto gear_callback = [&](const dbw_mkz_msgs::GearReport::ConstPtr& msg) {
+        std::lock_guard<std::mutex> lock(gear_data.mtx);
+        gear_data.msg = *msg;
+        gear_data.received = true;
+        // Further gear data processing here
+    };
+    std::string gear_topic;
+    nh.param<std::string>("gear_topic", gear_topic, "");
+    nh.param<double>("steering_gear_ratio", steering_gear_ratio, 14.81);
     ros::Subscriber gear_sub;
     if (gear_topic.empty()) {
         ROS_ERROR("Parameter 'gear_topic' is not set. Skipping gear subscription.");
@@ -131,10 +141,46 @@ int main(int argc, char** argv)
         gear_sub = nh.subscribe<dbw_mkz_msgs::GearReport>(gear_topic, 1, gear_callback);
         ROS_INFO_STREAM("Subscribed to gear topic: " << gear_topic);
     }
+    // --- End Gear Setup ---
+
+    // --- UDP Socket Initialization ---
+    int udp_sock = socket(AF_INET, SOCK_DGRAM, 0);
+    if (udp_sock < 0) {
+        perror("UDP socket creation failed");
+        return 1;
+    }
+
+    // Set up source address (local IP/port)
+    struct sockaddr_in src_addr;
+    memset(&src_addr, 0, sizeof(src_addr));
+    src_addr.sin_family = AF_INET;
+    std::string src_ip;
+    int src_port;
+    nh.param<std::string>("radarCfgSrcIP", src_ip, std::string("10.13.1.166"));
+    nh.param<int>("radarCfgSrcPort", src_port, 42401);
+    src_addr.sin_port = htons(src_port);
+    src_addr.sin_addr.s_addr = inet_addr(src_ip.c_str());
+
+    // Bind the socket to the source address
+    if (bind(udp_sock, (struct sockaddr*)&src_addr, sizeof(src_addr)) < 0) {
+        perror("UDP socket bind failed");
+        close(udp_sock);
+        return 1;
+    }
+
+    // Set up destination address (sensor IP/port)
+    struct sockaddr_in dest_addr;
+    memset(&dest_addr, 0, sizeof(dest_addr));
+    dest_addr.sin_family = AF_INET;
+    std::string dest_ip;
+    int dest_port;
+    nh.param<std::string>("radarCfgDstIP", dest_ip, std::string("10.13.1.113"));
+    nh.param<int>("radarCfgDstPort", dest_port, 42101);
+    dest_addr.sin_port = htons(dest_port);
+    dest_addr.sin_addr.s_addr = inet_addr(dest_ip.c_str());
+    // --- End UDP Socket Initialization ---   
 
     ros::Rate loop_rate(20); // 20 Hz
-
-
     std::string node_name = ros::this_node::getName();
 
     while (ros::ok())
@@ -224,6 +270,10 @@ int main(int argc, char** argv)
         ros::spinOnce();
         loop_rate.sleep();
     }
+
+    // --- UDP Socket Shutdown ---
+    close(udp_sock);
+    // --- End UDP Socket Shutdown ---
 
     return 0;
 }

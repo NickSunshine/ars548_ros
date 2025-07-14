@@ -2,10 +2,12 @@
     <arg name="radarIP" default="224.0.2.2"/>
     <arg name="radarPort" default="42102"/>
     <arg name="frameID_Radar" default="ARS_548"/>
+
     <arg name="radarCfgSrcIP" default="10.13.1.166"/>
     <arg name="radarCfgSrcPort" default="42401"/>
     <arg name="radarCfgDstIP" default="10.13.1.113"/>
     <arg name="radarCfgDstPort" default="42101"/>
+    
     <arg name="sensor_longitudinal_position" default="1.12"/>
     <arg name="sensor_lateral_position" default="0.24"/>
     <arg name="sensor_vertical_position" default="0.54"/>
@@ -47,6 +49,10 @@
         <param name="steering_topic" value="$(arg steering_topic)"/>
         <param name="steering_gear_ratio" value="$(arg steering_gear_ratio)"/>
         <param name="gear_topic" value="$(arg gear_topic)"/>
+        <param name="radarCfgSrcIP" value="$(arg radarCfgSrcIP)"/>
+        <param name="radarCfgSrcPort" value="$(arg radarCfgSrcPort)"/>
+        <param name="radarCfgDstIP" value="$(arg radarCfgDstIP)"/>
+        <param name="radarCfgDstPort" value="$(arg radarCfgDstPort)"/>
     </node>
     
     <node pkg="rviz" type="rviz" name="Visualization" args="-d $(find ars548_driver)/rviz/RadarVisualization.rviz"/>

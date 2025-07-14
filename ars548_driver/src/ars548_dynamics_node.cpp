@@ -83,9 +83,9 @@ int main(int argc, char** argv)
         gear_data.received = true;
         // Further gear data processing here
     };
-{
+
     ros::init(argc, argv, "ars548_dynamics_node");
-    ros::NodeHandle nh;
+    ros::NodeHandle nh("~");
 
     ROS_INFO("ars548_dynamics_node started.");
 
@@ -178,7 +178,7 @@ int main(int argc, char** argv)
         {
             std::lock_guard<std::mutex> lock(gear_data.mtx);
             if (gear_data.received) {
-                latest_gear = gear_data.msg.gear;
+                latest_gear = gear_data.msg.state.gear;
                 std::string gear_str = gearToString(latest_gear);
                 // Map gear to driving direction
                 switch (latest_gear) {
@@ -201,7 +201,26 @@ int main(int argc, char** argv)
         }
 
         // TODO:  Handle packaging up outgoing data to UDP message to sensor
-
+        // --- UDP Message Packaging and Sending (Pseudocode) ---
+        // 1. [Initialization, outside loop]
+        //    - Create and open a UDP socket (once, before the loop).
+        //    - Set up source and destination sockaddr_in structs.
+        //    - Bind the socket to the source address/port if required.
+        //
+        // 2. [Inside main loop, at desired send rate]
+        //    - For each of the six messages to send:
+        //        a. Serialize the message into a temporary buffer.
+        //        b. Ensure each message starts with its own "Header 1st Part" (ServiceID, MethodID, PayloadLength, etc.).
+        //    - Concatenate all six serialized message buffers into a single send buffer.
+        //    - Check that the total buffer size does not exceed the UDP payload limit.
+        //    - Send the combined buffer in a single sendto() call to the sensor.
+        //
+        // 3. [Shutdown, after loop]
+        //    - Close the UDP socket.
+        //
+        // // Note: Use mutexes or thread-safe access if any message data is updated from callbacks.
+        // // Note: If any message is optional, check if it should be included before serializing/concatenating.
+        // --- End UDP Message Packaging and Sending (Pseudocode) ---
         ros::spinOnce();
         loop_rate.sleep();
     }

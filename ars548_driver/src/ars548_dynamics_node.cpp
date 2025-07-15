@@ -278,7 +278,8 @@ int main(int argc, char** argv)
 {
     ros::init(argc, argv, "ars548_dynamics_node");
     ros::NodeHandle nh("~");
-    ROS_INFO("ars548_dynamics_node started.");
+    ros::Rate loop_rate(20); // 20 Hz
+    ROS_INFO_STREAM("Started node: " << ros::this_node::getName());
 
     // --- IMU Setup ---
     ThreadSafeData<sensor_msgs::Imu> imu_data;
@@ -290,7 +291,6 @@ int main(int argc, char** argv)
         std::lock_guard<std::mutex> lock(imu_data.mtx);
         imu_data.msg = *msg;
         imu_data.received = true;
-        // Further IMU data processing here
     };
     std::string imu_topic;
     nh.param<std::string>("imu_topic", imu_topic, "");
@@ -311,7 +311,6 @@ int main(int argc, char** argv)
         std::lock_guard<std::mutex> lock(speed_data.mtx);
         speed_data.msg = *msg;
         speed_data.received = true;
-        // Further speed data processing here
     };
     std::string speed_topic;
     nh.param<std::string>("speed_topic", speed_topic, "");
@@ -332,7 +331,6 @@ int main(int argc, char** argv)
         std::lock_guard<std::mutex> lock(steering_data.mtx);
         steering_data.msg = *msg;
         steering_data.received = true;
-        // Further steering data processing here
     };
     std::string steering_topic;
     float steering_gear_ratio = 14.81f;
@@ -355,7 +353,6 @@ int main(int argc, char** argv)
         std::lock_guard<std::mutex> lock(gear_data.mtx);
         gear_data.msg = *msg;
         gear_data.received = true;
-        // Further gear data processing here
     };
     std::string gear_topic;
     nh.param<std::string>("gear_topic", gear_topic, "");
@@ -406,47 +403,44 @@ int main(int argc, char** argv)
     dest_addr.sin_addr.s_addr = inet_addr(dest_ip.c_str());
     // --- End UDP Socket Initialization ---   
 
-    ros::Rate loop_rate(20); // 20 Hz
-    std::string node_name = ros::this_node::getName();
-
     while (ros::ok())
     {
         ros::Time now = ros::Time::now();
         std::string stamp_str = std::to_string(now.sec) + "." + std::to_string(now.nsec);
 
-        // Example: Access the latest IMU data safely
+        // Access the latest IMU data safely
         {
             std::lock_guard<std::mutex> lock(imu_data.mtx);
             if (imu_data.received) {
                 yaw_rate = imu_data.msg.angular_velocity.z * 180.0 / M_PI; // Convert to deg/s
                 longitudinal_accel = imu_data.msg.linear_acceleration.x; // m/s^2
                 lateral_accel = imu_data.msg.linear_acceleration.y; // m/s^2
-                ROS_INFO_STREAM("[" << node_name << "] [" << stamp_str << "] [Loop] Latest yaw rate (deg/s): " << yaw_rate
+                ROS_INFO_STREAM("[" << ros::this_node::getName() << "] [" << stamp_str << "] [Loop] Latest yaw rate (deg/s): " << yaw_rate
                                 << ", longitudinal accel (m/s^2): " << longitudinal_accel
                                 << ", lateral accel (m/s^2): " << lateral_accel);
             }
         }
 
-        // Example: Access the latest speed data safely
+        // Access the latest speed data safely
         {
             std::lock_guard<std::mutex> lock(speed_data.mtx);
             if (speed_data.received) {
                 speed = speed_data.msg.data * 3.6; // Convert to km/h
-                ROS_INFO_STREAM("[" << node_name << "] [" << stamp_str << "] [Loop] Latest speed: " << speed << " km/h");
+                ROS_INFO_STREAM("[" << ros::this_node::getName() << "] [" << stamp_str << "] [Loop] Latest speed: " << speed << " km/h");
             }
         }
 
-        // Example: Access the latest steering data safely
+        // Access the latest steering data safely
         {
             std::lock_guard<std::mutex> lock(steering_data.mtx);
             if (steering_data.received) {
                 // Convert steering wheel angle rad to steering front axle degrees using parameterized gear ratio
                 front_wheel_angle_deg = steering_data.msg.steering_wheel_angle * (180.0 / M_PI) / steering_gear_ratio;
-                ROS_INFO_STREAM("[" << node_name << "] [" << stamp_str << "] [Loop] Latest front wheel angle: " << front_wheel_angle_deg << " degrees (gear ratio: " << steering_gear_ratio << ")");
+                ROS_INFO_STREAM("[" << ros::this_node::getName() << "] [" << stamp_str << "] [Loop] Latest front wheel angle: " << front_wheel_angle_deg << " degrees (gear ratio: " << steering_gear_ratio << ")");
             }
         }
 
-        // Example: Access the latest gear data safely
+        // Access the latest gear data safely
         {
             std::lock_guard<std::mutex> lock(gear_data.mtx);
             if (gear_data.received) {
@@ -468,7 +462,7 @@ int main(int argc, char** argv)
                         latest_direction = MotionState::Standstill;
                         break;
                 }
-                ROS_INFO_STREAM("[" << node_name << "] [" << stamp_str << "] [Loop] Latest gear state: " << gear_str << " (" << static_cast<int>(latest_gear) << ") | Motion state: " << motionStateToString(latest_direction) << " (" << static_cast<int>(latest_direction) << ")");
+                ROS_INFO_STREAM("[" << ros::this_node::getName() << "] [" << stamp_str << "] [Loop] Latest gear state: " << gear_str << " (" << static_cast<int>(latest_gear) << ") | Motion state: " << motionStateToString(latest_direction) << " (" << static_cast<int>(latest_direction) << ")");
             }
         }
 

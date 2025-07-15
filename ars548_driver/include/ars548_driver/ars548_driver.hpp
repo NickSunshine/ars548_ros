@@ -832,7 +832,7 @@ class ARS548Driver{
         offset += sizeof(pitch);
 
         uint8_t plugOrientation = sensorConfig.PlugOrientation;
-	memcpy(buffer + offset, &plugOrientation, sizeof(plugOrientation));
+	    memcpy(buffer + offset, &plugOrientation, sizeof(plugOrientation));
         offset += sizeof(plugOrientation);
 
         uint32_t vehicleLength = serializeFloat32(sensorConfig.Length);

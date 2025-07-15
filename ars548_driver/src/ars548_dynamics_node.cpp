@@ -53,6 +53,227 @@ std::string gearToString(uint8_t gear)
     }
 }
 
+// --- Helper for float serialization (network order) ---
+static uint32_t serializeFloat32(float value) {
+    uint32_t temp;
+    memcpy(&temp, &value, sizeof(temp));
+    return htonl(temp);
+}
+
+// --- Packs AccelerationLateralCoG message into buffer ---
+static size_t PackAccelerationLateralCoG(char* buffer, size_t offset, float lateral_accel) {
+    AccelerationLateralCoG accelLatCog = {};
+    accelLatCog.ServiceID = htons(0);
+    accelLatCog.MethodID = htons(321);
+    accelLatCog.PayloadLength = htonl(32);
+    accelLatCog.AccelerationLateral = lateral_accel;
+
+    uint32_t serialized_value;
+    memcpy(buffer + offset, &accelLatCog.ServiceID, sizeof(accelLatCog.ServiceID));
+    offset += sizeof(accelLatCog.ServiceID);
+    memcpy(buffer + offset, &accelLatCog.MethodID, sizeof(accelLatCog.MethodID));
+    offset += sizeof(accelLatCog.MethodID);
+    memcpy(buffer + offset, &accelLatCog.PayloadLength, sizeof(accelLatCog.PayloadLength));
+    offset += sizeof(accelLatCog.PayloadLength);
+    serialized_value = serializeFloat32(accelLatCog.AccelerationLateralErrAmp);
+    memcpy(buffer + offset, &serialized_value, sizeof(serialized_value));
+    offset += sizeof(serialized_value);
+    memcpy(buffer + offset, &accelLatCog.AccelerationLateralErrAmp_InvalidFlag, sizeof(accelLatCog.AccelerationLateralErrAmp_InvalidFlag));
+    offset += sizeof(accelLatCog.AccelerationLateralErrAmp_InvalidFlag);
+    memcpy(buffer + offset, &accelLatCog.QualifierAccelerationLateral, sizeof(accelLatCog.QualifierAccelerationLateral));
+    offset += sizeof(accelLatCog.QualifierAccelerationLateral);
+    serialized_value = serializeFloat32(accelLatCog.AccelerationLateral);
+    memcpy(buffer + offset, &serialized_value, sizeof(serialized_value));
+    offset += sizeof(serialized_value);
+    memcpy(buffer + offset, &accelLatCog.AccelerationLateral_InvalidFlag, sizeof(accelLatCog.AccelerationLateral_InvalidFlag));
+    offset += sizeof(accelLatCog.AccelerationLateral_InvalidFlag);
+    memcpy(buffer + offset, &accelLatCog.AccelerationLateralEventDataQualifier, sizeof(accelLatCog.AccelerationLateralEventDataQualifier));
+    offset += sizeof(accelLatCog.AccelerationLateralEventDataQualifier);
+    memcpy(buffer + offset, &accelLatCog.Reserved1, sizeof(accelLatCog.Reserved1));
+    offset += sizeof(accelLatCog.Reserved1);
+    memcpy(buffer + offset, &accelLatCog.Reserved2, sizeof(accelLatCog.Reserved2));
+    offset += sizeof(accelLatCog.Reserved2);
+    memcpy(buffer + offset, &accelLatCog.Reserved3, sizeof(accelLatCog.Reserved3));
+    offset += sizeof(accelLatCog.Reserved3);
+    return offset;
+}
+
+// --- Packs AccelerationLongitudinalCoG message into buffer ---
+static size_t PackAccelerationLongitudinalCoG(char* buffer, size_t offset, float longitudinal_accel) {
+    AccelerationLongitudinalCoG accelLongCog = {};
+    accelLongCog.ServiceID = htons(0);
+    accelLongCog.MethodID = htons(322);
+    accelLongCog.PayloadLength = htonl(32);
+    accelLongCog.AccelerationLongitudinal = longitudinal_accel;
+
+    uint32_t serialized_value;
+    memcpy(buffer + offset, &accelLongCog.ServiceID, sizeof(accelLongCog.ServiceID));
+    offset += sizeof(accelLongCog.ServiceID);
+    memcpy(buffer + offset, &accelLongCog.MethodID, sizeof(accelLongCog.MethodID));
+    offset += sizeof(accelLongCog.MethodID);
+    memcpy(buffer + offset, &accelLongCog.PayloadLength, sizeof(accelLongCog.PayloadLength));
+    offset += sizeof(accelLongCog.PayloadLength);
+    serialized_value = serializeFloat32(accelLongCog.AccelerationLongitudinalErrAmp);
+    memcpy(buffer + offset, &serialized_value, sizeof(serialized_value));
+    offset += sizeof(serialized_value);
+    memcpy(buffer + offset, &accelLongCog.AccelerationLongitudinalErrAmp_InvalidFlags, sizeof(accelLongCog.AccelerationLongitudinalErrAmp_InvalidFlags));
+    offset += sizeof(accelLongCog.AccelerationLongitudinalErrAmp_InvalidFlags);
+    memcpy(buffer + offset, &accelLongCog.QualifierAccelerationLongitudinal, sizeof(accelLongCog.QualifierAccelerationLongitudinal));
+    offset += sizeof(accelLongCog.QualifierAccelerationLongitudinal);
+    serialized_value = serializeFloat32(accelLongCog.AccelerationLongitudinal);
+    memcpy(buffer + offset, &serialized_value, sizeof(serialized_value));
+    offset += sizeof(serialized_value);
+    memcpy(buffer + offset, &accelLongCog.AccelerationLongitudinal_InvalidFlag, sizeof(accelLongCog.AccelerationLongitudinal_InvalidFlag));
+    offset += sizeof(accelLongCog.AccelerationLongitudinal_InvalidFlag);
+    memcpy(buffer + offset, &accelLongCog.AccelerationLongitudinalEventDataQualifier, sizeof(accelLongCog.AccelerationLongitudinalEventDataQualifier));
+    offset += sizeof(accelLongCog.AccelerationLongitudinalEventDataQualifier);
+    memcpy(buffer + offset, &accelLongCog.Reserved1, sizeof(accelLongCog.Reserved1));
+    offset += sizeof(accelLongCog.Reserved1);
+    memcpy(buffer + offset, &accelLongCog.Reserved2, sizeof(accelLongCog.Reserved2));
+    offset += sizeof(accelLongCog.Reserved2);
+    memcpy(buffer + offset, &accelLongCog.Reserved3, sizeof(accelLongCog.Reserved3));
+    offset += sizeof(accelLongCog.Reserved3);
+    return offset;
+}
+
+// --- Packs DrivingDirection message into buffer ---
+static size_t PackDrivingDirection(char* buffer, size_t offset, MotionState latest_direction) {
+    DrivingDirection drivingDir = {};
+    drivingDir.ServiceID = htons(0);
+    drivingDir.MethodID = htons(325);
+    drivingDir.PayloadLength = htonl(22);
+    drivingDir.DrivingDirectionConfirmed = static_cast<uint8_t>(latest_direction);
+
+    memcpy(buffer + offset, &drivingDir.ServiceID, sizeof(drivingDir.ServiceID));
+    offset += sizeof(drivingDir.ServiceID);
+    memcpy(buffer + offset, &drivingDir.MethodID, sizeof(drivingDir.MethodID));
+    offset += sizeof(drivingDir.MethodID);
+    memcpy(buffer + offset, &drivingDir.PayloadLength, sizeof(drivingDir.PayloadLength));
+    offset += sizeof(drivingDir.PayloadLength);
+    memcpy(buffer + offset, &drivingDir.DrivingDirectionUnconfirmed, sizeof(drivingDir.DrivingDirectionUnconfirmed));
+    offset += sizeof(drivingDir.DrivingDirectionUnconfirmed);
+    memcpy(buffer + offset, &drivingDir.DrivingDirectionConfirmed, sizeof(drivingDir.DrivingDirectionConfirmed));
+    offset += sizeof(drivingDir.DrivingDirectionConfirmed);
+    memcpy(buffer + offset, &drivingDir.Reserved1, sizeof(drivingDir.Reserved1));
+    offset += sizeof(drivingDir.Reserved1);
+    memcpy(buffer + offset, &drivingDir.Reserved2, sizeof(drivingDir.Reserved2));
+    offset += sizeof(drivingDir.Reserved2);
+    memcpy(buffer + offset, &drivingDir.Reserved3, sizeof(drivingDir.Reserved3));
+    offset += sizeof(drivingDir.Reserved3);
+    return offset;
+}
+
+// --- Packs SteeringAngleFrontAxle message into buffer ---
+static size_t PackSteeringAngleFrontAxle(char* buffer, size_t offset, float front_wheel_angle_deg) {
+    SteeringAngleFrontAxle steeringAngle = {};
+    steeringAngle.ServiceID = htons(0);
+    steeringAngle.MethodID = htons(327);
+    steeringAngle.PayloadLength = htonl(32);
+    steeringAngle.SteeringAngleFrontAxle = front_wheel_angle_deg;
+
+    uint32_t serialized_value;
+    memcpy(buffer + offset, &steeringAngle.ServiceID, sizeof(steeringAngle.ServiceID));
+    offset += sizeof(steeringAngle.ServiceID);
+    memcpy(buffer + offset, &steeringAngle.MethodID, sizeof(steeringAngle.MethodID));
+    offset += sizeof(steeringAngle.MethodID);
+    memcpy(buffer + offset, &steeringAngle.PayloadLength, sizeof(steeringAngle.PayloadLength));
+    offset += sizeof(steeringAngle.PayloadLength);
+    memcpy(buffer + offset, &steeringAngle.QualifierSteeringAngleFrontAxle, sizeof(steeringAngle.QualifierSteeringAngleFrontAxle));
+    offset += sizeof(steeringAngle.QualifierSteeringAngleFrontAxle);
+    serialized_value = serializeFloat32(steeringAngle.SteeringAngleFrontAxleErrAmp);
+    memcpy(buffer + offset, &serialized_value, sizeof(serialized_value));
+    offset += sizeof(serialized_value);
+    memcpy(buffer + offset, &steeringAngle.SteeringAngleFrontAxleErrAmp_InvalidFlag, sizeof(steeringAngle.SteeringAngleFrontAxleErrAmp_InvalidFlag));
+    offset += sizeof(steeringAngle.SteeringAngleFrontAxleErrAmp_InvalidFlag);
+    serialized_value = serializeFloat32(steeringAngle.SteeringAngleFrontAxle);
+    memcpy(buffer + offset, &serialized_value, sizeof(serialized_value));
+    offset += sizeof(serialized_value);
+    memcpy(buffer + offset, &steeringAngle.SteeringAngleFrontAxle_InvalidFlag, sizeof(steeringAngle.SteeringAngleFrontAxle_InvalidFlag));
+    offset += sizeof(steeringAngle.SteeringAngleFrontAxle_InvalidFlag);
+    memcpy(buffer + offset, &steeringAngle.SteeringAngleFrontAxleEventDataQualifier, sizeof(steeringAngle.SteeringAngleFrontAxleEventDataQualifier));
+    offset += sizeof(steeringAngle.SteeringAngleFrontAxleEventDataQualifier);
+    memcpy(buffer + offset, &steeringAngle.Reserved1, sizeof(steeringAngle.Reserved1));
+    offset += sizeof(steeringAngle.Reserved1);
+    memcpy(buffer + offset, &steeringAngle.Reserved2, sizeof(steeringAngle.Reserved2));
+    offset += sizeof(steeringAngle.Reserved2);
+    memcpy(buffer + offset, &steeringAngle.Reserved3, sizeof(steeringAngle.Reserved3));
+    offset += sizeof(steeringAngle.Reserved3);
+    return offset;
+}
+
+// --- Packs VelocityVehicle message into buffer ---
+static size_t PackVelocityVehicle(char* buffer, size_t offset, float speed) {
+    VelocityVehicle velocity = {};
+    velocity.ServiceID = htons(0);
+    velocity.MethodID = htons(323);
+    velocity.PayloadLength = htonl(28);
+    velocity.VelocityVehicle = speed;
+
+    uint32_t serialized_value;
+    memcpy(buffer + offset, &velocity.ServiceID, sizeof(velocity.ServiceID));
+    offset += sizeof(velocity.ServiceID);
+    memcpy(buffer + offset, &velocity.MethodID, sizeof(velocity.MethodID));
+    offset += sizeof(velocity.MethodID);
+    memcpy(buffer + offset, &velocity.PayloadLength, sizeof(velocity.PayloadLength));
+    offset += sizeof(velocity.PayloadLength);
+    memcpy(buffer + offset, &velocity.StatusVelocityNearStandstill, sizeof(velocity.StatusVelocityNearStandstill));
+    offset += sizeof(velocity.StatusVelocityNearStandstill);
+    memcpy(buffer + offset, &velocity.QualifierVelocityVehicle, sizeof(velocity.QualifierVelocityVehicle));
+    offset += sizeof(velocity.QualifierVelocityVehicle);
+    memcpy(buffer + offset, &velocity.VelocityVehicleEventDataQualifier, sizeof(velocity.VelocityVehicleEventDataQualifier));
+    offset += sizeof(velocity.VelocityVehicleEventDataQualifier);
+    serialized_value = serializeFloat32(velocity.VelocityVehicle);
+    memcpy(buffer + offset, &serialized_value, sizeof(serialized_value));
+    offset += sizeof(serialized_value);
+    memcpy(buffer + offset, &velocity.VelocityVehicle_InvalidFlag, sizeof(velocity.VelocityVehicle_InvalidFlag));
+    offset += sizeof(velocity.VelocityVehicle_InvalidFlag);
+    memcpy(buffer + offset, &velocity.Reserved1, sizeof(velocity.Reserved1));
+    offset += sizeof(velocity.Reserved1);
+    memcpy(buffer + offset, &velocity.Reserved2, sizeof(velocity.Reserved2));
+    offset += sizeof(velocity.Reserved2);
+    memcpy(buffer + offset, &velocity.Reserved3, sizeof(velocity.Reserved3));
+    offset += sizeof(velocity.Reserved3);
+    return offset;
+}
+
+// --- Packs Yaw_Rate message into buffer ---
+static size_t PackYawRate(char* buffer, size_t offset, float yaw_rate) {
+    Yaw_Rate yawRate = {};
+    yawRate.ServiceID = htons(0);
+    yawRate.MethodID = htons(326);
+    yawRate.PayloadLength = htonl(32);
+    yawRate.YawRate = yaw_rate;
+
+    uint32_t serialized_value;
+    memcpy(buffer + offset, &yawRate.ServiceID, sizeof(yawRate.ServiceID));
+    offset += sizeof(yawRate.ServiceID);
+    memcpy(buffer + offset, &yawRate.MethodID, sizeof(yawRate.MethodID));
+    offset += sizeof(yawRate.MethodID);
+    memcpy(buffer + offset, &yawRate.PayloadLength, sizeof(yawRate.PayloadLength));
+    offset += sizeof(yawRate.PayloadLength);
+    serialized_value = serializeFloat32(yawRate.YawRateErrAmp);
+    memcpy(buffer + offset, &serialized_value, sizeof(serialized_value));
+    offset += sizeof(serialized_value);
+    memcpy(buffer + offset, &yawRate.YawRateErrAmp_InvalidFlag, sizeof(yawRate.YawRateErrAmp_InvalidFlag));
+    offset += sizeof(yawRate.YawRateErrAmp_InvalidFlag);
+    memcpy(buffer + offset, &yawRate.QualifierYawRate, sizeof(yawRate.QualifierYawRate));
+    offset += sizeof(yawRate.QualifierYawRate);
+    serialized_value = serializeFloat32(yawRate.YawRate);
+    memcpy(buffer + offset, &serialized_value, sizeof(serialized_value));
+    offset += sizeof(serialized_value);
+    memcpy(buffer + offset, &yawRate.YawRate_InvalidFlag, sizeof(yawRate.YawRate_InvalidFlag));
+    offset += sizeof(yawRate.YawRate_InvalidFlag);
+    memcpy(buffer + offset, &yawRate.YawRateEventDataQualifier, sizeof(yawRate.YawRateEventDataQualifier));
+    offset += sizeof(yawRate.YawRateEventDataQualifier);
+    memcpy(buffer + offset, &yawRate.Reserved1, sizeof(yawRate.Reserved1));
+    offset += sizeof(yawRate.Reserved1);
+    memcpy(buffer + offset, &yawRate.Reserved2, sizeof(yawRate.Reserved2));
+    offset += sizeof(yawRate.Reserved2);
+    memcpy(buffer + offset, &yawRate.Reserved3, sizeof(yawRate.Reserved3));
+    offset += sizeof(yawRate.Reserved3);
+    return offset;
+}
+
 int main(int argc, char** argv)
 {
     ros::init(argc, argv, "ars548_dynamics_node");
@@ -251,200 +472,15 @@ int main(int argc, char** argv)
             }
         }
 
+        // --- Pack messages into buffer ---
         char buffer[1024];
         size_t offset = 0;
-
-        uint32_t serialized_value;
-        auto serializeFloat32 = [](float value) -> uint32_t {
-            uint32_t temp;
-            memcpy(&temp, &value, sizeof(temp));
-            return htonl(temp);
-        };
-
-        AccelerationLateralCoG accelLatCog = {};
-        accelLatCog.ServiceID = htons(0);
-        accelLatCog.MethodID = htons(321);
-        accelLatCog.PayloadLength = htonl(32);
-        accelLatCog.AccelerationLateral = lateral_accel;
-        
-        memcpy(buffer + offset, &accelLatCog.ServiceID, sizeof(accelLatCog.ServiceID));
-        offset += sizeof(accelLatCog.ServiceID);
-        memcpy(buffer + offset, &accelLatCog.MethodID, sizeof(accelLatCog.MethodID));
-        offset += sizeof(accelLatCog.MethodID);
-        memcpy(buffer + offset, &accelLatCog.PayloadLength, sizeof(accelLatCog.PayloadLength));
-        offset += sizeof(accelLatCog.PayloadLength);
-        serialized_value = serializeFloat32(accelLatCog.AccelerationLateralErrAmp);
-        memcpy(buffer + offset, &serialized_value, sizeof(serialized_value));
-        offset += sizeof(serialized_value);
-        memcpy(buffer + offset, &accelLatCog.AccelerationLateralErrAmp_InvalidFlag, sizeof(accelLatCog.AccelerationLateralErrAmp_InvalidFlag));
-        offset += sizeof(accelLatCog.AccelerationLateralErrAmp_InvalidFlag);
-        memcpy(buffer + offset, &accelLatCog.QualifierAccelerationLateral, sizeof(accelLatCog.QualifierAccelerationLateral));
-        offset += sizeof(accelLatCog.QualifierAccelerationLateral);
-        serialized_value = serializeFloat32(accelLatCog.AccelerationLateral);
-        memcpy(buffer + offset, &serialized_value, sizeof(serialized_value));
-        offset += sizeof(serialized_value);
-        memcpy(buffer + offset, &accelLatCog.AccelerationLateral_InvalidFlag, sizeof(accelLatCog.AccelerationLateral_InvalidFlag));
-        offset += sizeof(accelLatCog.AccelerationLateral_InvalidFlag);
-        memcpy(buffer + offset, &accelLatCog.AccelerationLateralEventDataQualifier, sizeof(accelLatCog.AccelerationLateralEventDataQualifier));
-        offset += sizeof(accelLatCog.AccelerationLateralEventDataQualifier);
-        memcpy(buffer + offset, &accelLatCog.Reserved1, sizeof(accelLatCog.Reserved1));
-        offset += sizeof(accelLatCog.Reserved1);
-        memcpy(buffer + offset, &accelLatCog.Reserved2, sizeof(accelLatCog.Reserved2));
-        offset += sizeof(accelLatCog.Reserved2);
-        memcpy(buffer + offset, &accelLatCog.Reserved3, sizeof(accelLatCog.Reserved3));
-        offset += sizeof(accelLatCog.Reserved3);
-
-        AccelerationLongitudinalCoG accelLongCog = {};
-        accelLongCog.ServiceID = htons(0);
-        accelLongCog.MethodID = htons(322);
-        accelLongCog.PayloadLength = htonl(32);
-        accelLongCog.AccelerationLongitudinal = longitudinal_accel;
-
-        memcpy(buffer + offset, &accelLongCog.ServiceID, sizeof(accelLongCog.ServiceID));
-        offset += sizeof(accelLongCog.ServiceID);
-        memcpy(buffer + offset, &accelLongCog.MethodID, sizeof(accelLongCog.MethodID));
-        offset += sizeof(accelLongCog.MethodID);
-        memcpy(buffer + offset, &accelLongCog.PayloadLength, sizeof(accelLongCog.PayloadLength));
-        offset += sizeof(accelLongCog.PayloadLength);
-        serialized_value = serializeFloat32(accelLongCog.AccelerationLongitudinalErrAmp);
-        memcpy(buffer + offset, &serialized_value, sizeof(serialized_value));
-        offset += sizeof(serialized_value);
-        memcpy(buffer + offset, &accelLongCog.AccelerationLongitudinalErrAmp_InvalidFlags, sizeof(accelLongCog.AccelerationLongitudinalErrAmp_InvalidFlags));
-        offset += sizeof(accelLongCog.AccelerationLongitudinalErrAmp_InvalidFlags);
-        memcpy(buffer + offset, &accelLongCog.QualifierAccelerationLongitudinal, sizeof(accelLongCog.QualifierAccelerationLongitudinal));
-        offset += sizeof(accelLongCog.QualifierAccelerationLongitudinal);
-        serialized_value = serializeFloat32(accelLongCog.AccelerationLongitudinal);
-        memcpy(buffer + offset, &serialized_value, sizeof(serialized_value));
-        offset += sizeof(serialized_value);
-        memcpy(buffer + offset, &accelLongCog.AccelerationLongitudinal_InvalidFlag, sizeof(accelLongCog.AccelerationLongitudinal_InvalidFlag));
-        offset += sizeof(accelLongCog.AccelerationLongitudinal_InvalidFlag);
-        memcpy(buffer + offset, &accelLongCog.AccelerationLongitudinalEventDataQualifier, sizeof(accelLongCog.AccelerationLongitudinalEventDataQualifier));
-        offset += sizeof(accelLongCog.AccelerationLongitudinalEventDataQualifier);
-        memcpy(buffer + offset, &accelLongCog.Reserved1, sizeof(accelLongCog.Reserved1));
-        offset += sizeof(accelLongCog.Reserved1);
-        memcpy(buffer + offset, &accelLongCog.Reserved2, sizeof(accelLongCog.Reserved2));
-        offset += sizeof(accelLongCog.Reserved2);
-        memcpy(buffer + offset, &accelLongCog.Reserved3, sizeof(accelLongCog.Reserved3));
-        offset += sizeof(accelLongCog.Reserved3);
-
-        DrivingDirection drivingDir = {};
-        drivingDir.ServiceID = htons(0);
-        drivingDir.MethodID = htons(325);
-        drivingDir.PayloadLength = htonl(22);
-        drivingDir.DrivingDirectionConfirmed = static_cast<uint8_t>(latest_direction);
-
-        memcpy(buffer + offset, &drivingDir.ServiceID, sizeof(drivingDir.ServiceID));
-        offset += sizeof(drivingDir.ServiceID);
-        memcpy(buffer + offset, &drivingDir.MethodID, sizeof(drivingDir.MethodID));
-        offset += sizeof(drivingDir.MethodID);
-        memcpy(buffer + offset, &drivingDir.PayloadLength, sizeof(drivingDir.PayloadLength));
-        offset += sizeof(drivingDir.PayloadLength);
-        memcpy(buffer + offset, &drivingDir.DrivingDirectionUnconfirmed, sizeof(drivingDir.DrivingDirectionUnconfirmed));
-        offset += sizeof(drivingDir.DrivingDirectionUnconfirmed);
-        memcpy(buffer + offset, &drivingDir.DrivingDirectionConfirmed, sizeof(drivingDir.DrivingDirectionConfirmed));
-        offset += sizeof(drivingDir.DrivingDirectionConfirmed);
-        memcpy(buffer + offset, &drivingDir.Reserved1, sizeof(drivingDir.Reserved1));
-        offset += sizeof(drivingDir.Reserved1);
-        memcpy(buffer + offset, &drivingDir.Reserved2, sizeof(drivingDir.Reserved2));
-        offset += sizeof(drivingDir.Reserved2);
-        memcpy(buffer + offset, &drivingDir.Reserved3, sizeof(drivingDir.Reserved3));
-        offset += sizeof(drivingDir.Reserved3);
-
-        SteeringAngleFrontAxle steeringAngle = {};
-        steeringAngle.ServiceID = htons(0);
-        steeringAngle.MethodID = htons(327);
-        steeringAngle.PayloadLength = htonl(32);
-        steeringAngle.SteeringAngleFrontAxle = front_wheel_angle_deg;
-
-        memcpy(buffer + offset, &steeringAngle.ServiceID, sizeof(steeringAngle.ServiceID));
-        offset += sizeof(steeringAngle.ServiceID);
-        memcpy(buffer + offset, &steeringAngle.MethodID, sizeof(steeringAngle.MethodID));
-        offset += sizeof(steeringAngle.MethodID);
-        memcpy(buffer + offset, &steeringAngle.PayloadLength, sizeof(steeringAngle.PayloadLength));
-        offset += sizeof(steeringAngle.PayloadLength);
-        memcpy(buffer + offset, &steeringAngle.QualifierSteeringAngleFrontAxle, sizeof(steeringAngle.QualifierSteeringAngleFrontAxle));
-        offset += sizeof(steeringAngle.QualifierSteeringAngleFrontAxle);
-        serialized_value = serializeFloat32(steeringAngle.SteeringAngleFrontAxleErrAmp);
-        memcpy(buffer + offset, &serialized_value, sizeof(serialized_value));
-        offset += sizeof(serialized_value);
-        memcpy(buffer + offset, &steeringAngle.SteeringAngleFrontAxleErrAmp_InvalidFlag, sizeof(steeringAngle.SteeringAngleFrontAxleErrAmp_InvalidFlag));
-        offset += sizeof(steeringAngle.SteeringAngleFrontAxleErrAmp_InvalidFlag);
-        serialized_value = serializeFloat32(steeringAngle.SteeringAngleFrontAxle);
-        memcpy(buffer + offset, &serialized_value, sizeof(serialized_value));
-        offset += sizeof(serialized_value);
-        memcpy(buffer + offset, &steeringAngle.SteeringAngleFrontAxle_InvalidFlag, sizeof(steeringAngle.SteeringAngleFrontAxle_InvalidFlag));
-        offset += sizeof(steeringAngle.SteeringAngleFrontAxle_InvalidFlag);
-        memcpy(buffer + offset, &steeringAngle.SteeringAngleFrontAxleEventDataQualifier, sizeof(steeringAngle.SteeringAngleFrontAxleEventDataQualifier));
-        offset += sizeof(steeringAngle.SteeringAngleFrontAxleEventDataQualifier);
-        memcpy(buffer + offset, &steeringAngle.Reserved1, sizeof(steeringAngle.Reserved1));
-        offset += sizeof(steeringAngle.Reserved1);
-        memcpy(buffer + offset, &steeringAngle.Reserved2, sizeof(steeringAngle.Reserved2));
-        offset += sizeof(steeringAngle.Reserved2);
-        memcpy(buffer + offset, &steeringAngle.Reserved3, sizeof(steeringAngle.Reserved3));
-        offset += sizeof(steeringAngle.Reserved3);
-
-        VelocityVehicle velocity = {};
-        velocity.ServiceID = htons(0);
-        velocity.MethodID = htons(323);
-        velocity.PayloadLength = htonl(28);
-        velocity.VelocityVehicle = speed;
-
-        memcpy(buffer + offset, &velocity.ServiceID, sizeof(velocity.ServiceID));
-        offset += sizeof(velocity.ServiceID);
-        memcpy(buffer + offset, &velocity.MethodID, sizeof(velocity.MethodID));
-        offset += sizeof(velocity.MethodID);
-        memcpy(buffer + offset, &velocity.PayloadLength, sizeof(velocity.PayloadLength));
-        offset += sizeof(velocity.PayloadLength);
-        memcpy(buffer + offset, &velocity.StatusVelocityNearStandstill, sizeof(velocity.StatusVelocityNearStandstill));
-        offset += sizeof(velocity.StatusVelocityNearStandstill);
-        memcpy(buffer + offset, &velocity.QualifierVelocityVehicle, sizeof(velocity.QualifierVelocityVehicle));
-        offset += sizeof(velocity.QualifierVelocityVehicle);
-        memcpy(buffer + offset, &velocity.VelocityVehicleEventDataQualifier, sizeof(velocity.VelocityVehicleEventDataQualifier));
-        offset += sizeof(velocity.VelocityVehicleEventDataQualifier);
-        serialized_value = serializeFloat32(velocity.VelocityVehicle);
-        memcpy(buffer + offset, &serialized_value, sizeof(serialized_value));
-        offset += sizeof(serialized_value);
-        memcpy(buffer + offset, &velocity.VelocityVehicle_InvalidFlag, sizeof(velocity.VelocityVehicle_InvalidFlag));
-        offset += sizeof(velocity.VelocityVehicle_InvalidFlag);
-        memcpy(buffer + offset, &velocity.Reserved1, sizeof(velocity.Reserved1));
-        offset += sizeof(velocity.Reserved1);
-        memcpy(buffer + offset, &velocity.Reserved2, sizeof(velocity.Reserved2));
-        offset += sizeof(velocity.Reserved2);
-        memcpy(buffer + offset, &velocity.Reserved3, sizeof(velocity.Reserved3));
-        offset += sizeof(velocity.Reserved3);
-
-        Yaw_Rate yawRate = {};
-        yawRate.ServiceID = htons(0);
-        yawRate.MethodID = htons(326);
-        yawRate.PayloadLength = htonl(32);
-        yawRate.YawRate = yaw_rate;
-
-        memcpy(buffer + offset, &yawRate.ServiceID, sizeof(yawRate.ServiceID));
-        offset += sizeof(yawRate.ServiceID);
-        memcpy(buffer + offset, &yawRate.MethodID, sizeof(yawRate.MethodID));
-        offset += sizeof(yawRate.MethodID);
-        memcpy(buffer + offset, &yawRate.PayloadLength, sizeof(yawRate.PayloadLength));
-        offset += sizeof(yawRate.PayloadLength);
-        serialized_value = serializeFloat32(yawRate.YawRateErrAmp);
-        memcpy(buffer + offset, &serialized_value, sizeof(serialized_value));
-        offset += sizeof(serialized_value);
-        memcpy(buffer + offset, &yawRate.YawRateErrAmp_InvalidFlag, sizeof(yawRate.YawRateErrAmp_InvalidFlag));
-        offset += sizeof(yawRate.YawRateErrAmp_InvalidFlag);
-        memcpy(buffer + offset, &yawRate.QualifierYawRate, sizeof(yawRate.QualifierYawRate));
-        offset += sizeof(yawRate.QualifierYawRate);
-        serialized_value = serializeFloat32(yawRate.YawRate);
-        memcpy(buffer + offset, &serialized_value, sizeof(serialized_value));
-        offset += sizeof(serialized_value);
-        memcpy(buffer + offset, &yawRate.YawRate_InvalidFlag, sizeof(yawRate.YawRate_InvalidFlag));
-        offset += sizeof(yawRate.YawRate_InvalidFlag);
-        memcpy(buffer + offset, &yawRate.YawRateEventDataQualifier, sizeof(yawRate.YawRateEventDataQualifier));
-        offset += sizeof(yawRate.YawRateEventDataQualifier);
-        memcpy(buffer + offset, &yawRate.Reserved1, sizeof(yawRate.Reserved1));
-        offset += sizeof(yawRate.Reserved1);
-        memcpy(buffer + offset, &yawRate.Reserved2, sizeof(yawRate.Reserved2));
-        offset += sizeof(yawRate.Reserved2);
-        memcpy(buffer + offset, &yawRate.Reserved3, sizeof(yawRate.Reserved3));
-        offset += sizeof(yawRate.Reserved3);
+        offset = PackAccelerationLateralCoG(buffer, offset, lateral_accel);
+        offset = PackAccelerationLongitudinalCoG(buffer, offset, longitudinal_accel);
+        offset = PackDrivingDirection(buffer, offset, latest_direction);
+        offset = PackSteeringAngleFrontAxle(buffer, offset, front_wheel_angle_deg);
+        offset = PackVelocityVehicle(buffer, offset, speed);
+        offset = PackYawRate(buffer, offset, yaw_rate);
 
         // --- Send UDP datagram ---
         ssize_t bytes_sent = sendto(udp_sock, buffer, offset, 0, (struct sockaddr*)&dest_addr, sizeof(dest_addr));
@@ -458,9 +494,7 @@ int main(int argc, char** argv)
         loop_rate.sleep();
     }
 
-    // --- UDP Socket Shutdown ---
     close(udp_sock);
-    // --- End UDP Socket Shutdown ---
 
     return 0;
 }

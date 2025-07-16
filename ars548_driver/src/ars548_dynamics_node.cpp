@@ -15,7 +15,7 @@
 #include <string.h>
 #include <stdio.h>
 
-#include "ars548_data.h"
+#include "ars548_driver/ars548_data.h"
 
 template<typename T>
 struct ThreadSafeData {

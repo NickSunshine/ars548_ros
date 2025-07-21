@@ -299,7 +299,7 @@ int main(int argc, char** argv)
         ROS_ERROR("Parameter 'imu_topic' is not set. Skipping IMU subscription.");
     } else {
         imu_sub = nh.subscribe<sensor_msgs::Imu>(imu_topic, 1, imu_callback);
-        ROS_INFO_STREAM("Subscribed to IMU topic: " << imu_topic);
+        ROS_DEBUG_STREAM("Subscribed to IMU topic: " << imu_topic);
     }
     // --- End IMU Setup ---
     
@@ -319,7 +319,7 @@ int main(int argc, char** argv)
         ROS_ERROR("Parameter 'speed_topic' is not set. Skipping speed subscription.");
     } else {
         speed_sub = nh.subscribe<std_msgs::Float64>(speed_topic, 1, speed_callback);
-        ROS_INFO_STREAM("Subscribed to speed topic: " << speed_topic);
+        ROS_DEBUG_STREAM("Subscribed to speed topic: " << speed_topic);
     }
     // --- End Speed Setup ---
 
@@ -340,7 +340,7 @@ int main(int argc, char** argv)
         ROS_ERROR("Parameter 'steering_topic' is not set. Skipping steering subscription.");
     } else {
         steering_sub = nh.subscribe<dbw_mkz_msgs::SteeringReport>(steering_topic, 1, steering_callback);
-        ROS_INFO_STREAM("Subscribed to steering topic: " << steering_topic);
+        ROS_DEBUG_STREAM("Subscribed to steering topic: " << steering_topic);
     }
     // --- End Steering Setup ---
 
@@ -362,7 +362,7 @@ int main(int argc, char** argv)
         ROS_ERROR("Parameter 'gear_topic' is not set. Skipping gear subscription.");
     } else {
         gear_sub = nh.subscribe<dbw_mkz_msgs::GearReport>(gear_topic, 1, gear_callback);
-        ROS_INFO_STREAM("Subscribed to gear topic: " << gear_topic);
+        ROS_DEBUG_STREAM("Subscribed to gear topic: " << gear_topic);
     }
     // --- End Gear Setup ---
 
@@ -415,7 +415,7 @@ int main(int argc, char** argv)
                 yaw_rate = imu_data.msg.angular_velocity.z * 180.0 / M_PI; // Convert to deg/s
                 longitudinal_accel = imu_data.msg.linear_acceleration.x; // m/s^2
                 lateral_accel = imu_data.msg.linear_acceleration.y; // m/s^2
-                ROS_INFO_STREAM("[" << ros::this_node::getName() << "] [" << stamp_str << "] [Loop] Latest yaw rate (deg/s): " << yaw_rate
+                ROS_DEBUG_STREAM("[" << ros::this_node::getName() << "] [" << stamp_str << "] [Loop] Latest yaw rate (deg/s): " << yaw_rate
                                 << ", longitudinal accel (m/s^2): " << longitudinal_accel
                                 << ", lateral accel (m/s^2): " << lateral_accel);
             }
@@ -426,7 +426,7 @@ int main(int argc, char** argv)
             std::lock_guard<std::mutex> lock(speed_data.mtx);
             if (speed_data.received) {
                 speed = speed_data.msg.data * 3.6; // Convert to km/h
-                ROS_INFO_STREAM("[" << ros::this_node::getName() << "] [" << stamp_str << "] [Loop] Latest speed: " << speed << " km/h");
+                ROS_DEBUG_STREAM("[" << ros::this_node::getName() << "] [" << stamp_str << "] [Loop] Latest speed: " << speed << " km/h");
             }
         }
 
@@ -436,7 +436,7 @@ int main(int argc, char** argv)
             if (steering_data.received) {
                 // Convert steering wheel angle rad to steering front axle degrees using parameterized gear ratio
                 front_wheel_angle_deg = steering_data.msg.steering_wheel_angle * (180.0 / M_PI) / steering_gear_ratio;
-                ROS_INFO_STREAM("[" << ros::this_node::getName() << "] [" << stamp_str << "] [Loop] Latest front wheel angle: " << front_wheel_angle_deg << " degrees (gear ratio: " << steering_gear_ratio << ")");
+                ROS_DEBUG_STREAM("[" << ros::this_node::getName() << "] [" << stamp_str << "] [Loop] Latest front wheel angle: " << front_wheel_angle_deg << " degrees (gear ratio: " << steering_gear_ratio << ")");
             }
         }
 
@@ -462,7 +462,7 @@ int main(int argc, char** argv)
                         latest_direction = MotionState::Standstill;
                         break;
                 }
-                ROS_INFO_STREAM("[" << ros::this_node::getName() << "] [" << stamp_str << "] [Loop] Latest gear state: " << gear_str << " (" << static_cast<int>(latest_gear) << ") | Motion state: " << motionStateToString(latest_direction) << " (" << static_cast<int>(latest_direction) << ")");
+                ROS_DEBUG_STREAM("[" << ros::this_node::getName() << "] [" << stamp_str << "] [Loop] Latest gear state: " << gear_str << " (" << static_cast<int>(latest_gear) << ") | Motion state: " << motionStateToString(latest_direction) << " (" << static_cast<int>(latest_direction) << ")");
             }
         }
 

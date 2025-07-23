@@ -50,6 +50,7 @@ target_link_libraries(ars548_dynamics ${catkin_LIBRARIES})
 
 install(TARGETS
   ars548_driver
+  ars548_dynamics
   DESTINATION lib/${PROJECT_NAME}
 )
 
